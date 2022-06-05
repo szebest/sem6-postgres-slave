@@ -1,0 +1,22 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model reservation {
+  id              Int       @id @default(autoincrement())
+  created_at      DateTime  @default(now())
+  reserved_from   DateTime  
+  reserved_to     DateTime  
+  user_id         Int       
+  plate           String    @db.VarChar(10)
+}

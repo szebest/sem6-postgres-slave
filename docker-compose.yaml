@@ -1,0 +1,34 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: slave_postgres_container
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin2137}
+      PGUSER: admin,
+      PGDATA: /data/postgres
+      POSTGRES_HOST_AUTH_METHOD: password
+    volumes:
+      - ./postgres:/data/postgres
+    ports:
+      - "30052:5432"
+    restart: unless-stopped
+  pgadmin:
+    container_name: slave_pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-7050}:80"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+volumes:
+  cache:
+    driver: local
