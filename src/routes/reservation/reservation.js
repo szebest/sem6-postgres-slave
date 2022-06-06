@@ -3,7 +3,7 @@ router = express.Router();
 
 const prisma = require('../../prismaClient')
 
-const { isAtLeastServerAdminValidator, isLoggedInValidator } = require('../../middlewares/authorization');
+const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator } = require('../../middlewares/authorization');
 const { reservationValidator, reservationUpdateValidator } = require('../../middlewares/validators');
 
 router.get('/', isAtLeastServerAdminValidator, async (_, res) => {
@@ -11,6 +11,28 @@ router.get('/', isAtLeastServerAdminValidator, async (_, res) => {
         const allReservations = (await prisma.reservation.findMany())
 
         return res.json(allReservations).status(200)
+    }
+    catch(err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+})
+
+router.get('/user/:id', isSpecificUserValidator, async (req, res) => {
+    const user_id = parseInt(req.params.id)
+    try {
+        const allUserReservations = await prisma.reservation.findMany({
+            where: {
+                user_id
+            },
+            orderBy: {
+                created_at: {
+                    sort: 'desc'
+                }
+            }
+        })
+
+        return res.json(allUserReservations).status(200)
     }
     catch(err) {
         console.log(err)

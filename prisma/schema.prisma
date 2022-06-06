@@ -12,11 +12,16 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+model owner {
+  id              Int       @id @default(autoincrement())
+  owner_id        Int
+}
+
 model reservation {
   id              Int       @id @default(autoincrement())
   created_at      DateTime  @default(now())
   reserved_from   DateTime  
   reserved_to     DateTime  
   user_id         Int       
-  plate           String    @db.VarChar(10)
+  plate           String    @db.VarChar(25)
 }
