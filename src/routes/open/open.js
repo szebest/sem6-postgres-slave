@@ -35,6 +35,10 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         return res.sendStatus(400)
     }
 
+    if (typeof plate !== 'string') {
+        return res.sendStatus(400)
+    }
+
     const currentDate = new Date()
     
     // Allow the user to enter 5 minutes earlier
