@@ -13,11 +13,13 @@
   "paths": {
     "/api/v1/reservations/": {
       "get": {
+        "summary": "Returns all the reservations made on the server. User has to be at least an owner",
         "description": "",
         "parameters": [
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           }
         ],
@@ -37,11 +39,13 @@
         }
       },
       "post": {
+        "summary": "Used for creating an reservation. User has to be logged in",
         "description": "",
         "parameters": [
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           },
           {
@@ -49,15 +53,28 @@
             "in": "body",
             "schema": {
               "type": "object",
+              "required": [
+                "reserved_from",
+                "reserved_to",
+                "user_id",
+                "plate"
+              ],
               "properties": {
                 "reserved_from": {
-                  "example": "any"
+                  "example": "2022-06-16T15:03:09.385Z",
+                  "type": "date"
                 },
                 "reserved_to": {
-                  "example": "any"
+                  "example": "2022-06-16T15:03:09.385Z",
+                  "type": "date"
+                },
+                "user_id": {
+                  "example": 1,
+                  "type": "integer"
                 },
                 "plate": {
-                  "example": "any"
+                  "example": "string",
+                  "type": "string"
                 }
               }
             }
@@ -81,17 +98,20 @@
     },
     "/api/v1/reservations/user/{id}": {
       "get": {
+        "summary": "Returns all the reservations made by a specific user. Has to be at least the specific user",
         "description": "",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "integer",
+            "description": "Id of the user"
           },
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           }
         ],
@@ -113,17 +133,20 @@
     },
     "/api/v1/reservations/{id}": {
       "get": {
+        "summary": "Returns one reservation by the passed id. Has to be logged in",
         "description": "",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "integer",
+            "description": "Id of the reservation to get"
           },
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           }
         ],
@@ -143,17 +166,20 @@
         }
       },
       "delete": {
+        "summary": "Used for removing an reservation. Has to be at least an owner",
         "description": "",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "integer",
+            "description": "Id of the reservation to delete"
           },
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           }
         ],
@@ -173,17 +199,20 @@
         }
       },
       "patch": {
+        "summary": "Used for updating an plate in the reservation. Has to be at least the server owner",
         "description": "",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "integer",
+            "description": "Id of the reservation to patch"
           },
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           },
           {
@@ -191,9 +220,13 @@
             "in": "body",
             "schema": {
               "type": "object",
+              "required": [
+                "plate"
+              ],
               "properties": {
                 "plate": {
-                  "example": "any"
+                  "example": "string",
+                  "type": "string"
                 }
               }
             }
@@ -217,11 +250,13 @@
     },
     "/api/v1/open/": {
       "post": {
+        "summary": "Used for opening the gate. User has to be logged in or send a plate in the body. To open the gate remotely from the phone provide an access token, for microcontroller provide an access token and the plate in the body. After successfully finding an reservation the server will emit an open event to all the sockets connected.",
         "description": "",
         "parameters": [
           {
             "name": "authorization",
             "in": "header",
+            "description": "Access token",
             "type": "string"
           },
           {
@@ -231,7 +266,8 @@
               "type": "object",
               "properties": {
                 "plate": {
-                  "example": "any"
+                  "example": "string",
+                  "type": "string"
                 }
               }
             }

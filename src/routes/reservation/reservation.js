@@ -6,7 +6,13 @@ const prisma = require('../../prismaClient')
 const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator, hasUserValues } = require('../../middlewares/authorization');
 const { reservationValidator, reservationUpdateValidator } = require('../../middlewares/validators');
 
-router.get('/', isAtLeastServerAdminValidator, async (_, res) => {
+router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
+    // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
     try {
         const allReservations = (await prisma.reservation.findMany())
 
@@ -18,7 +24,19 @@ router.get('/', isAtLeastServerAdminValidator, async (_, res) => {
     }
 })
 
-router.get('/user/:id', isSpecificUserValidator, async (req, res) => {
+router.get('/user/:id', isSpecificUserValidator, hasUserValues, async (req, res) => {
+    // #swagger.summary = 'Returns all the reservations made by a specific user. Has to be at least the specific user'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['id'] = {
+                in: 'path',
+                description: 'Id of the user',
+                "type": "integer"
+    } */
     const user_id = parseInt(req.params.id)
     try {
         const allUserReservations = await prisma.reservation.findMany({
@@ -40,7 +58,19 @@ router.get('/user/:id', isSpecificUserValidator, async (req, res) => {
     }
 })
 
-router.get('/:id', isAtLeastServerAdminValidator, async (req, res) => {
+router.get('/:id', isLoggedInValidator, hasUserValues, async (req, res) => {
+    // #swagger.summary = 'Returns one reservation by the passed id. Has to be logged in'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['id'] = {
+                in: 'path',
+                description: 'Id of the reservation to get',
+                "type": "integer"
+    } */
     const id = parseInt(req.params.id)
     try {
         const reservation = await prisma.reservation.findUnique({
@@ -48,6 +78,10 @@ router.get('/:id', isAtLeastServerAdminValidator, async (req, res) => {
                 id
             }
         })
+
+        if (reservation.user_id !== req.userId) {
+            return res.sendStatus(403)
+        }
 
         return res.json(reservation).status(200)
     }
@@ -57,7 +91,19 @@ router.get('/:id', isAtLeastServerAdminValidator, async (req, res) => {
     }
 })
 
-router.delete('/:id', isAtLeastServerAdminValidator, async (req, res) => {
+router.delete('/:id', isAtLeastServerAdminValidator, hasUserValues, async (req, res) => {
+    // #swagger.summary = 'Used for removing an reservation. Has to be at least an owner'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['id'] = {
+                in: 'path',
+                description: 'Id of the reservation to delete',
+                "type": "integer"
+    } */
     const id = parseInt(req.params.id)
     try {
         const deleted = await prisma.reservation.delete({
@@ -75,6 +121,33 @@ router.delete('/:id', isAtLeastServerAdminValidator, async (req, res) => {
 })
 
 router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, async (req, res) => {
+    // #swagger.summary = 'Used for updating an plate in the reservation. Has to be at least the server owner'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['id'] = {
+                in: 'path',
+                description: 'Id of the reservation to patch',
+                "type": "integer"
+    } */
+
+    /*  #swagger.parameters['body'] = {
+            "name": "body",
+            "in": "body",
+            "@schema": {
+                "type": "object",
+                "required": ['plate'],
+                "properties": {
+                    "plate": {
+                        "example": "string",
+                        "type": "string",
+                    }
+                }
+            }
+    } */
     const id = parseInt(req.params.id)
     try {
         const updated = await prisma.reservation.update({
@@ -95,6 +168,39 @@ router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, 
 })
 
 router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
+    // #swagger.summary = 'Used for creating an reservation. User has to be logged in'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['body'] = {
+            "name": "body",
+            "in": "body",
+            "@schema": {
+                "type": "object",
+                "required": ['reserved_from', 'reserved_to', 'user_id', 'plate'],
+                "properties": {
+                    "reserved_from": {
+                        "example": "2022-06-16T15:03:09.385Z",
+                        "type": "date",
+                    },
+                    "reserved_to": {
+                        "example": "2022-06-16T15:03:09.385Z",
+                        "type": "date",
+                    },
+                    "user_id": {
+                        "example": 1,
+                        "type": "integer",
+                    },
+                    "plate": {
+                        "example": "string",
+                        "type": "string",
+                    }
+                }
+            }
+    } */
     try {
         const created = await prisma.reservation.create({
             data: {

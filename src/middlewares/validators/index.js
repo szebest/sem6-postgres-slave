@@ -1,4 +1,7 @@
+const reservationValidator = require('./reservationValidator')
+const reservationUpdateValidator = require('./reservationUpdateValidator')
+
 module.exports = {
-    reservationValidator: require('./reservationValidator'),
-    reservationUpdateValidator: require('./reservationUpdateValidator')
+    reservationValidator,
+    reservationUpdateValidator
 }
