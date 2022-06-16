@@ -12,6 +12,8 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const plate = req.body.plate
 
     const currentDate = new Date()
+
+    console.log(id, plate)
     
     // Allow the user to enter 5 minutes earlier
     currentDate.setMinutes(currentDate.getMinutes() - 5)
@@ -22,12 +24,8 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         const reservations = await prisma.reservation.findMany({
             where: {
                 AND: {
-                    OR: {
-                        user_id: id
-                    },
-                    OR: {
-                        plate
-                    },
+                    user_id: id,
+                    plate,
                     reserved_from: {
                         lte: isoDateFormat
                     },
