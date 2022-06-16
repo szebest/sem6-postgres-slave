@@ -23,7 +23,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             where: {
                 AND: {
                     OR: {
-                        id
+                        user_id: id
                     },
                     OR: {
                         plate
