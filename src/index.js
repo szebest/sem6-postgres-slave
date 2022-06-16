@@ -8,8 +8,24 @@ const routes = require('./routes')
 
 const { connect } = require('./socket')
 
+const swaggerUi = require('swagger-ui-express')
+const swaggerFile = require('../swagger-output.json')
+
+if (process.env.NODE_ENV === 'development') {
+  swaggerFile.host = "localhost:" + PORT
+}
+else {
+  swaggerFile.host = "sem6-postgres-slave1.herokuapp.com"
+  swaggerFile.schemes = [
+    'https',
+    'http'
+  ]
+}
+
 app.use(bodyParser())
 app.use('/api/v1', routes)
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 
 const server = app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`)
