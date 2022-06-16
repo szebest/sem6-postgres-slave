@@ -6,9 +6,6 @@ module.exports = ((req, res, next) => {
     if (!req.body.reserved_to) {
         errors.push("reserved_to")
     }
-    if (!req.body.user_id) {
-        errors.push("user_id")
-    }
     if (!req.body.plate) {
         errors.push("plate")
     }

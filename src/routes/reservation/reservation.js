@@ -3,7 +3,7 @@ router = express.Router();
 
 const prisma = require('../../prismaClient')
 
-const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator } = require('../../middlewares/authorization');
+const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator, hasUserValues } = require('../../middlewares/authorization');
 const { reservationValidator, reservationUpdateValidator } = require('../../middlewares/validators');
 
 router.get('/', isAtLeastServerAdminValidator, async (_, res) => {
@@ -94,13 +94,13 @@ router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, 
     }
 })
 
-router.post('/', reservationValidator, isLoggedInValidator, async (req, res) => {
+router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
     try {
         const created = await prisma.reservation.create({
             data: {
                 reserved_from: req.body.reserved_from,
                 reserved_to: req.body.reserved_to,
-                user_id: req.body.user_id,
+                user_id: req.userId,
                 plate: req.body.plate
             }
         })
