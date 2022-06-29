@@ -9,7 +9,7 @@ module.exports = (req, res, next) => {
         jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             console.log(user)
             if (err) {
-                console.err(err)
+                console.error(err)
                 return res.sendStatus(403)
             }
 
