@@ -6,6 +6,8 @@ const bodyParser = require('body-parser')
 
 const routes = require('./routes')
 
+const cors = require('cors')
+
 const { connect } = require('./socket')
 
 const swaggerUi = require('swagger-ui-express')
@@ -21,6 +23,10 @@ else {
     'http'
   ]
 }
+
+app.use(cors({
+  origin: '*'
+}));
 
 app.use(bodyParser())
 app.use('/api/v1', routes)
