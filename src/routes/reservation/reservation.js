@@ -206,6 +206,8 @@ router.post('/', /*reservationValidator, isLoggedInValidator, hasUserValues,*/ a
             }
     } */
     try {
+        const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl + '/api/v1'
+
         const allReservationsActive = await prisma.reservation.findMany({
             where: {
                 reserved_to: {
@@ -223,7 +225,11 @@ router.post('/', /*reservationValidator, isLoggedInValidator, hasUserValues,*/ a
         })
 
         const response = await axios
-            .get('sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking')
+            .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking', {
+                params: {
+                  server: fullUrl
+                }
+              })
 
         const data = await response.json()
 
