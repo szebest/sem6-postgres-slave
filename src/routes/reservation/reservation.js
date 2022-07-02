@@ -171,7 +171,7 @@ router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, 
     }
 })
 
-router.post('/', /*reservationValidator, isLoggedInValidator, hasUserValues,*/ async (req, res) => {
+router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
     // #swagger.summary = 'Used for creating an reservation. User has to be logged in'
 
     /*  #swagger.parameters['authorization'] = {
@@ -219,28 +219,36 @@ router.post('/', /*reservationValidator, isLoggedInValidator, hasUserValues,*/ a
             }
         })
 
+        const response = await axios
+            .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking', {
+                params: {
+                  server: process.env.NODE_ENV === 'development' ?
+                    'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
+                    fullUrl
+                }
+              })
+        
         const overlaps = checkOverlaps(reservationToDatesArray(allReservationsActive), {
             start: new Date(req.body.reserved_from),
             end: new Date(req.body.reserved_to)
         })
 
-        const response = await axios
-            .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking', {
-                params: {
-                  server: fullUrl
+        const overlapObject = overlaps.find((overlap) => {
+            return overlap.amount >= response.data.parking_spaces
+        })
+
+        if (overlapObject != null) {
+            return res.send({
+                overlaps: {
+                    ...overlapObject.overlap
                 }
-              })
+            }).status(406)
+        }
 
-        const data = await response.json()
-
-        return res.json({
-            overlaps,
-            data
-        }).status(200)
         const created = await prisma.reservation.create({
             data: {
-                reserved_from: req.body.reserved_from,
-                reserved_to: req.body.reserved_to,
+                reserved_from: new Date(req.body.reserved_from),
+                reserved_to: new Date(req.body.reserved_to),
                 user_id: req.userId,
                 plate: req.body.plate
             }
