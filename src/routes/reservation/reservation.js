@@ -5,6 +5,8 @@ const prisma = require('../../prismaClient')
 
 const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator, hasUserValues } = require('../../middlewares/authorization');
 const { reservationValidator, reservationUpdateValidator } = require('../../middlewares/validators');
+const { checkOverlaps } = require('../../util/');
+const { reservationToDatesArray } = require('../../mappers');
 
 router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
@@ -167,7 +169,7 @@ router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, 
     }
 })
 
-router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
+router.post('/', /*reservationValidator, isLoggedInValidator, hasUserValues,*/ async (req, res) => {
     // #swagger.summary = 'Used for creating an reservation. User has to be logged in'
 
     /*  #swagger.parameters['authorization'] = {
@@ -202,6 +204,31 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             }
     } */
     try {
+        const allReservationsActive = await prisma.reservation.findMany({
+            where: {
+                reserved_to: {
+                    gt: new Date().toISOString()
+                }
+            },
+            orderBy: {
+                reserved_from: 'asc'
+            }
+        })
+
+        const overlaps = checkOverlaps(reservationToDatesArray(allReservationsActive), {
+            start: new Date(req.body.reserved_from),
+            end: new Date(req.body.reserved_to)
+        })
+
+        const response = await axios
+            .get('sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking')
+
+        const data = await response.json()
+
+        return res.json({
+            overlaps,
+            data
+        }).status(200)
         const created = await prisma.reservation.create({
             data: {
                 reserved_from: req.body.reserved_from,
