@@ -219,6 +219,22 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             }
         })
 
+        const userReservations = allReservationsActive.filter((reservationActive) => reservationActive.user_id === req.userId)
+
+        const overlapsSameUserReservation = checkOverlaps(reservationToDatesArray(userReservations), {
+            start: new Date(req.body.reserved_from),
+            end: new Date(req.body.reserved_to)
+        })
+
+        if (overlapsSameUserReservation.length > 0) {
+            return res.send({
+                info: "USER_RESERVATION_OVERLAPS",
+                overlaps: {
+                    ...overlapsSameUserReservation[0].overlap
+                }
+            }).status(406)
+        }
+
         const response = await axios
             .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking', {
                 params: {
@@ -239,6 +255,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
 
         if (overlapObject != null) {
             return res.send({
+                info: "NOT_ENOUGH_FREE_PARKING_PLACES_LEFT",
                 overlaps: {
                     ...overlapObject.overlap
                 }

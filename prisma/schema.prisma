@@ -22,6 +22,14 @@ model reservation {
   created_at      DateTime  @default(now())
   reserved_from   DateTime  
   reserved_to     DateTime  
+  last_left       DateTime?
+  is_inside       Boolean   @default(false)
   user_id         Int       
   plate           String    @db.VarChar(25)
+  payment_intent  String?   @db.VarChar(100)
+  receipt_URL     String?   @db.VarChar(200)
+  amount_paid     Float?      
+  net_received    Float?      
+  payment_status  String    @db.VarChar(20) @default("created")
+  excess_payment  Float     @default(0.0)
 }

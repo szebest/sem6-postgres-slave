@@ -6,9 +6,10 @@ const prisma = require('../../prismaClient')
 const { ioObject } = require('../../socket')
 
 const { isLoggedInValidator } = require('../../middlewares/authorization');
+const { overtimePriceCalculator } = require('../../util');
 
 router.post('/', isLoggedInValidator, async (req, res) => {
-    // #swagger.summary = 'Used for opening the gate. User has to be logged in or send a plate in the body. To open the gate remotely from the phone provide an access token, for microcontroller provide an access token and the plate in the body. After successfully finding an reservation the server will emit an open event to all the sockets connected.'
+    // #swagger.summary = 'Used for leaving the parking. User has to be logged in or send a plate in the body. To open the gate remotely from the phone provide an access token, for microcontroller provide an access token and the plate in the body. After successfully finding an reservation the server will emit an open event to all the sockets connected.'
 
     /*  #swagger.parameters['authorization'] = {
                 in: 'header',
@@ -35,37 +36,34 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         return res.sendStatus(400)
     }
 
-    const currentDate = new Date()
-    
-    // Allow the user to enter 5 minutes earlier
-    currentDate.setMinutes(currentDate.getMinutes() - 5)
-
-    const isoDateFormat = currentDate.toISOString()
-
     try {
-        const reservation = await prisma.reservation.update({
+        const reservation = await prisma.reservation.findFirst({
             where: {
-                AND: {
-                    user_id: id,
-                    plate: {
-                        in: plates
-                    },
-                    reserved_from: {
-                        lte: isoDateFormat
-                    },
-                    reserved_to: {
-                        gte: isoDateFormat
-                    }
+                user_id: id,
+                plate: {
+                    in: plates
                 },
-                is_inside: false
-            },
-            data: {
                 is_inside: true
             }
         })
 
         if (reservation !== undefined && reservation !== null) {
             ioObject.io.emit('open')
+
+            const currentDate = new Date()
+
+            const diffInDates = currentDate - reservation.reserved_to
+
+            await prisma.reservation.update({
+                where: {
+                    user_id: reservation.user_id
+                },
+                data: {
+                    is_inside: false,
+                    last_left: currentDate,
+                    paid: diffInDates > 0 ? overtimePriceCalculator(diffInDates / (60 * 1000)) : undefined
+                }
+            })
 
             return res.json({
                 status: 'Open',
@@ -75,7 +73,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         else {
             return res.json({
                 status: 'Forbidden',
-                foundReservation: null
+                foundReservation: reservation
             }).status(403)
         }
     }
