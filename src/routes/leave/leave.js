@@ -61,7 +61,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                 data: {
                     is_inside: false,
                     last_left: currentDate,
-                    paid: diffInDates > 0 ? overtimePriceCalculator(diffInDates / (60 * 1000)) : undefined
+                    excess_payment: diffInDates > 0 ? overtimePriceCalculator(diffInDates / (60 * 1000)) : undefined
                 }
             })
 
