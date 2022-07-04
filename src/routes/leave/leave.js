@@ -42,21 +42,20 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                 user_id: id,
                 plate: {
                     in: plates
-                },
-                is_inside: true
+                }
             }
         })
 
-        if (reservation !== undefined && reservation !== null) {
+        if (reservation !== null) {
             ioObject.io.emit('open')
 
             const currentDate = new Date()
 
             const diffInDates = currentDate - reservation.reserved_to
 
-            await prisma.reservation.update({
+            const updated = await prisma.reservation.update({
                 where: {
-                    user_id: reservation.user_id
+                    id: reservation.id
                 },
                 data: {
                     is_inside: false,
@@ -67,7 +66,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
 
             return res.json({
                 status: 'Open',
-                foundReservation: reservation
+                foundReservation: updated
             }).status(200)
         }
         else {

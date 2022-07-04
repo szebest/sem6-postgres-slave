@@ -28,8 +28,11 @@ model reservation {
   plate           String    @db.VarChar(25)
   payment_intent  String?   @db.VarChar(100)
   receipt_URL     String?   @db.VarChar(200)
-  amount_paid     Float?      
-  net_received    Float?      
+  amount_paid     Decimal?  @db.Decimal(10, 2)    
+  net_received    Decimal?  @db.Decimal(10, 2)    
   payment_status  String    @db.VarChar(20) @default("created")
-  excess_payment  Float     @default(0.0)
+  excess_payment  Decimal   @default(0.0) @db.Decimal(10, 2)
+
+  @@index(user_id)
+  @@index(id)
 }

@@ -29,5 +29,8 @@ module.exports = function checkOverlaps(arrayOfDates, singleDate) {
         }
     })
 
-    return retArr
+    return retArr.sort((overlap1, overlap2) => {
+        return (overlap1.overlap.end - overlap1.overlap.start) > (overlap2.overlap.end - overlap2.overlap.start) ?
+            -1 : 1
+    })
 }

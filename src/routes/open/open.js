@@ -43,7 +43,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const isoDateFormat = currentDate.toISOString()
 
     try {
-        const reservation = await prisma.reservation.update({
+        const reservation = await prisma.reservation.findFirst({
             where: {
                 AND: {
                     user_id: id,
@@ -55,27 +55,36 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                     },
                     reserved_to: {
                         gte: isoDateFormat
+                    },
+                    is_inside: false,
+                    payment_status: {
+                        not: "created"
                     }
-                },
-                is_inside: false
-            },
-            data: {
-                is_inside: true
+                }
             }
         })
 
-        if (reservation !== undefined && reservation !== null) {
+        if (reservation !== null) {
             ioObject.io.emit('open')
+
+            const updated = await prisma.reservation.update({
+                where: {
+                    id: reservation.id
+                },
+                data: {
+                    is_inside: true
+                }
+            })
 
             return res.json({
                 status: 'Open',
-                foundReservation: reservation
+                foundReservation: updated
             }).status(200)
         }
         else {
             return res.json({
                 status: 'Forbidden',
-                foundReservation: null
+                foundReservation: []
             }).status(403)
         }
     }

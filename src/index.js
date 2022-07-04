@@ -28,7 +28,9 @@ app.use(cors({
   origin: '*'
 }));
 
-app.use(bodyParser())
+app.use('/api/v1/stripe', bodyParser.raw({type: "*/*"}))
+app.use(bodyParser.json())
+
 app.use('/api/v1', routes)
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile))
