@@ -250,7 +250,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
         }
 
         const response = await axios
-            .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingSlotsInParking', {
+            .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
                 params: {
                   server: process.env.NODE_ENV === 'development' ?
                     'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
@@ -310,7 +310,9 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                       product_data: {
                         name: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
                       },
-                      unit_amount: reservationPriceCalculator() * 100 // Multiply by 100 because stripe uses the lower part of the currency as base
+                      unit_amount: reservationPriceCalculator(reservationDurationInHours, {
+                        amountPerHour: response.data.price_per_hour
+                      }) * 100 // Multiply by 100 because stripe uses the lower part of the currency as base
                     },
                     quantity: 1
                   }
