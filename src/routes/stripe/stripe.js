@@ -18,7 +18,9 @@ router.post('/', async (req, res) => {
     let event
     try {
         event = stripe.webhooks.constructEvent(payload, sig, endpoint_secret)
-        console.log(`Received stripe event: ${event.data}`)
+        console.log(`Received stripe event: ${event.type}`)
+        console.log('Metadata attached:')
+        console.log(event.data.object.metadata)
         if (event.type === 'charge.succeeded') {
             if (event.data.object.metadata?.type === "RESERVATION_PAYMENT") {
                 const transactionData = await axios.get(`https://api.stripe.com/v1/balance_transactions/${event.data.object.balance_transaction}`, {
