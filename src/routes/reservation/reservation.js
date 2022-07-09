@@ -321,7 +321,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             },
             orderBy: {
-                created_at: 'asc'
+                created_at: 'desc'
             }
         })
 
@@ -443,6 +443,19 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
 })
 
 router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
+    // #swagger.summary = 'Used for paying excess_payment by the user. Used when the user stayed too long on a parking and got extra charged.'
+
+    /*  #swagger.parameters['authorization'] = {
+                in: 'header',
+                description: 'Access token',
+    } */
+
+    /*  #swagger.parameters['id'] = {
+                in: 'path',
+                description: 'Id of the reservation to pay excess_payment',
+                "type": "integer"
+    } */
+
     const id = +req.params.id
     if (isNaN(id)) {
         return res.sendStatus(400)
