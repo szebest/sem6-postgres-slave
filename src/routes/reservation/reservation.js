@@ -12,7 +12,7 @@ const { reservationValidator, reservationUpdateValidator } = require('../../midd
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
+router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
@@ -20,9 +20,91 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
                 description: 'Access token',
     } */
     try {
-        const allReservations = (await prisma.reservation.findMany())
+        const allReservations = (await prisma.reservation.findMany()).map((reservation) => {
+            return {
+                ...reservation,
+                net_received: +reservation.net_received,
+                amount_paid: +reservation.amount_paid,
+                excess_payment: +reservation.excess_payment
+            }
+        })
 
-        return res.json(allReservations).status(200)
+        const dateOneWeekBefore = new Date();
+        dateOneWeekBefore.setDate(dateOneWeekBefore.getDate() - 7);
+
+        const dateTwoWeeksBefore = new Date();
+        dateTwoWeeksBefore.setDate(dateTwoWeeksBefore.getDate() - 14);
+
+        const dateOneWeekAfter = new Date();
+        dateOneWeekAfter.setDate(dateOneWeekAfter.getDate() + 7);
+
+        const reservationsCreatedInTheLastWeek = allReservations.filter((reservation) => {
+            return reservation.created_at >= dateOneWeekBefore
+        })
+
+        const amountUsersPaidLastWeek = reservationsCreatedInTheLastWeek.map((reservation) => {
+            return reservation.amount_paid
+        }).reduce((previousValue, currentValue) => {
+            return +previousValue + +currentValue ?? 0
+        })
+
+        const netValueReceivedLastWeek = reservationsCreatedInTheLastWeek.map((reservation) => {
+            return reservation.net_received
+        }).reduce((previousValue, currentValue) => {
+            return +previousValue + +currentValue ?? 0
+        })
+
+        const reservationsActiveInTheLastWeek = allReservations.filter((reservation) => {
+            return reservation.payment_status !== 'created' && 
+                reservation.reserved_from >= dateTwoWeeksBefore && reservation.reserved_to <= dateOneWeekAfter
+        })
+
+        const daysEnum = {
+            0: "MONDAY",
+            1: "TUESDAY",
+            2: "WEDNESDAY",
+            3: "THURSDAY",
+            4: "FRIDAY",
+            5: "SATURDAY",
+            6: "SUNDAY"
+        }
+
+        const days = {
+            MONDAY: Array(24).fill(0),
+            TUESDAY: Array(24).fill(0),
+            WEDNESDAY: Array(24).fill(0),
+            THURSDAY: Array(24).fill(0),
+            FRIDAY: Array(24).fill(0),
+            SATURDAY: Array(24).fill(0),
+            SUNDAY: Array(24).fill(0)
+        }
+
+        const currentDate = new Date()
+
+        reservationsActiveInTheLastWeek.forEach((reservation) => {
+            const startingDate = reservation.reserved_from < dateOneWeekBefore ? dateOneWeekBefore : reservation.reserved_from
+            const endingDate = reservation.reserved_to > currentDate ? currentDate : reservation.reserved_to
+            let flag = true
+            while (flag) {
+                const hour = startingDate.getHours()
+                const day = startingDate.getDay()
+
+                days[daysEnum[day]][hour] += 1
+
+                startingDate.setHours(hour + 1)
+
+                if (startingDate.getHours() > endingDate.getHours()) flag = false;
+            }
+        })
+
+        return res.json({
+            allReservations,
+            amountUsersPaidLastWeek,
+            netValueReceivedLastWeek,
+            reservationsCreatedLastWeek: reservationsCreatedInTheLastWeek.length,
+            reservationsActiveLastWeek: reservationsActiveInTheLastWeek.length,
+            lastWeekStatistics: days
+        }).status(200)
     }
     catch(err) {
         console.log(err)
