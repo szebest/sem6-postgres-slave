@@ -7,7 +7,6 @@ module.exports = (req, res, next) => {
     if (authToken === null) return res.sendStatus(401)
     else {
         jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-            console.log(user)
             if (err) {
                 console.error(err)
                 return res.sendStatus(403)

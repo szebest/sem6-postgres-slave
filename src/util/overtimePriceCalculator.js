@@ -14,5 +14,5 @@ module.exports = async (overtimeInHours) => {
 
     const amountPerHour = response.data.price_per_overtime_hour || 6.0
 
-    return Math.round((overtimeInHours * amountPerHour) * 100) / 100
+    return Math.round((overtimeInHours * (amountPerHour + 1)) * 100) / 100
 }

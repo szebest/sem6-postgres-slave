@@ -126,6 +126,9 @@ router.get('/user/:id', isSpecificUserValidator, hasUserValues, async (req, res)
                 "type": "integer"
     } */
     const user_id = parseInt(req.params.id)
+    if (isNaN(user_id)) {
+        return res.sendStatus(400)
+    }
     try {
         const allUserReservations = await prisma.reservation.findMany({
             where: {
@@ -159,7 +162,10 @@ router.get('/:id', isLoggedInValidator, hasUserValues, async (req, res) => {
                 description: 'Id of the reservation to get',
                 "type": "integer"
     } */
-    const id = parseInt(req.params.id)
+    const id = +req.params.id
+    if (isNaN(id)) {
+        return res.sendStatus(400)
+    }
     try {
         const reservation = await prisma.reservation.findUnique({
             where: {
@@ -192,7 +198,10 @@ router.delete('/:id', isAtLeastServerAdminValidator, hasUserValues, async (req, 
                 description: 'Id of the reservation to delete',
                 "type": "integer"
     } */
-    const id = parseInt(req.params.id)
+    const id = +req.params.id
+    if (isNaN(id)) {
+        return res.sendStatus(400)
+    }
     try {
         const deleted = await prisma.reservation.delete({
             where: {
@@ -236,7 +245,10 @@ router.patch('/:id', reservationUpdateValidator, isAtLeastServerAdminValidator, 
                 }
             }
     } */
-    const id = parseInt(req.params.id)
+    const id = +req.params.id
+    if (isNaN(id)) {
+        return res.sendStatus(400)
+    }
     try {
         const updated = await prisma.reservation.update({
             where: {
@@ -379,31 +391,31 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 payment_method_types: ['card'],
                 customer_email: customer.data.email,
                 payment_intent_data: {
-                  metadata: {
-                    type: "RESERVATION_PAYMENT",
-                    reservation_id: created.id
-                  }
+                    metadata: {
+                        type: "RESERVATION_PAYMENT",
+                        reservation_id: created.id
+                    }
                 },
                 expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
                 line_items: [
-                  {
-                    price_data: {
-                      currency: 'pln',
-                      product_data: {
-                        name: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
-                      },
-                      unit_amount: reservationPriceCalculator(reservationDurationInHours, {
-                        amountPerHour: response.data.price_per_hour
-                      }) * 100 // Multiply by 100 because stripe uses the lower part of the currency as base
-                    },
-                    quantity: 1
-                  }
+                    {
+                        price_data: {
+                            currency: 'pln',
+                            product_data: {
+                                name: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
+                            },
+                            unit_amount: reservationPriceCalculator(reservationDurationInHours, {
+                                amountPerHour: response.data.price_per_hour
+                            }) * 100 // Multiply by 100 because stripe uses the lower part of the currency as base
+                        },
+                        quantity: 1
+                    }
                 ],
                 mode: 'payment',
                 success_url: 'http://localhost:3000/',
                 cancel_url: 'http://localhost:3000/'
-              })
-    
+            })
+
             const updated = await prisma.reservation.update({
                 where: {
                     id: created.id
@@ -412,6 +424,8 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     payment_intent: session.payment_intent
                 }
             })
+
+            console.log("RESERVATION_PAYMENT")
 
             console.log(`Created new payment intent: ${session.payment_intent}`)
 
@@ -429,12 +443,25 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
 })
 
 router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
+    const id = +req.params.id
+    if (isNaN(id)) {
+        return res.sendStatus(400)
+    }
     try {
-        const reservation = await prisma.reservation.findUnique({
+        const reservation = await prisma.reservation.findFirst({
             where: {
-                id: req.params.id
+                id,
+                user_id: req.userId
             }
         })
+
+        if (reservation === null) {
+            return res.sendStatus(404)
+        }
+
+        if (reservation.excess_payment <= 0.01) {
+            return res.sendStatus(422)
+        }
 
         const customer = await axios
             .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getEmailBySlave/${req.userId}`, {
@@ -447,32 +474,38 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
             payment_method_types: ['card'],
             customer_email: customer.data.email,
             payment_intent_data: {
-              metadata: {
-                type: "EXCESS_PAYMENT",
-                reservation_id: reservation.id
-              }
+                metadata: {
+                    type: "EXCESS_PAYMENT",
+                    reservation_id: reservation.id
+                }
             },
             expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
             line_items: [
-              {
-                price_data: {
-                  currency: 'pln',
-                  product_data: {
-                    name: 'Dopłata za pozostanie dłużej na parkingu'
-                  },
-                  unit_amount: reservation.excess_payment * 100
-                },
-                quantity: 1
-              }
+                {
+                    price_data: {
+                        currency: 'pln',
+                        product_data: {
+                            name: 'Dopłata za pozostanie dłużej na parkingu'
+                        },
+                        unit_amount: reservation.excess_payment * 100
+                    },
+                    quantity: 1
+                }
             ],
             mode: 'payment',
             success_url: 'http://localhost:3000/',
             cancel_url: 'http://localhost:3000/'
-          })
+        })
 
-          return res.json({
+        console.log("EXCESS_PAYMENT")
+
+        console.log(`Created new payment intent: ${session.payment_intent}`)
+
+        console.log(`With session URL: ${session.url}`)
+
+        return res.json({
             payment_intent: session.payment_intent
-          }).status(200)
+        }).status(200)
     }
     catch(err) {
         console.log(err)
