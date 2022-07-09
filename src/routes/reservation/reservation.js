@@ -309,24 +309,24 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             },
             orderBy: {
-                reserved_from: 'asc'
+                created_at: 'asc'
             }
         })
 
-        const userReservations = allReservationsActive.filter((reservationActive) => reservationActive.user_id === req.userId)
+        const reservationsWithSamePlate = allReservationsActive.filter((reservationActive) => reservationActive.plate === req.body.plate)
 
-        const overlapsSameUserReservation = checkOverlaps(reservationToDatesArray(userReservations), {
+        const overlapsSamePlateReservation = checkOverlaps(reservationToDatesArray(reservationsWithSamePlate), {
             start: new Date(req.body.reserved_from),
             end: new Date(req.body.reserved_to)
         })
 
-        if (overlapsSameUserReservation.length > 0 && overlapsSameUserReservation.some((overlap) => {
+        if (overlapsSamePlateReservation.length > 0 && overlapsSamePlateReservation.some((overlap) => {
             return overlap.overlap.end - overlap.overlap.start > 0
         })) {
             return res.send({
                 info: "USER_RESERVATION_OVERLAPS",
                 overlaps: {
-                    ...overlapsSameUserReservation[0].overlap
+                    ...overlapsSamePlateReservation[0].overlap
                 }
             }).status(406)
         }
@@ -421,6 +421,58 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
         })
 
         return res.json(created).status(200)
+    }
+    catch(err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+})
+
+router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, async (req, res) => {
+    try {
+        const reservation = await prisma.reservation.findUnique({
+            where: {
+                id: req.params.id
+            }
+        })
+
+        const customer = await axios
+            .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getEmailBySlave/${req.userId}`, {
+                headers: {
+                    authorization: `Bearer ${process.env.SLAVE_SECRET}`
+                }
+            })
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            customer_email: customer.data.email,
+            payment_intent_data: {
+              metadata: {
+                type: "EXCESS_PAYMENT",
+                reservation_id: reservation.id
+              }
+            },
+            expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
+            line_items: [
+              {
+                price_data: {
+                  currency: 'pln',
+                  product_data: {
+                    name: 'Dopłata za pozostanie dłużej na parkingu'
+                  },
+                  unit_amount: reservation.excess_payment * 100
+                },
+                quantity: 1
+              }
+            ],
+            mode: 'payment',
+            success_url: 'http://localhost:3000/',
+            cancel_url: 'http://localhost:3000/'
+          })
+
+          return res.json({
+            payment_intent: session.payment_intent
+          }).status(200)
     }
     catch(err) {
         console.log(err)
