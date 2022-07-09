@@ -12,7 +12,7 @@ const { reservationValidator, reservationUpdateValidator } = require('../../midd
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
+router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
