@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
                     }
                 })
 
-            console.log(transactionData.data)
+            console.log(event.data)
             if (event.data.object.metadata?.type === "RESERVATION_PAYMENT") {
                 console.log("RESERVATION_PAYMENT")
                 
@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
                         net_received: transactionData.data.net / 100
                     }
                 })
-
-                console.log(updated)
             }
             else if (event.data.metadata?.type === "EXCESS_PAYMENT") {
                 console.log("EXCESS_PAYMENT")
