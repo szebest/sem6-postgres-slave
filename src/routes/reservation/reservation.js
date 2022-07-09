@@ -12,7 +12,7 @@ const { reservationValidator, reservationUpdateValidator } = require('../../midd
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
+router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
@@ -30,13 +30,13 @@ router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res)
         })
 
         const dateOneWeekBefore = new Date();
-        dateOneWeekBefore.setDate(dateOneWeekBefore.getDate() - 7);
+        dateOneWeekBefore.setUTCDate(dateOneWeekBefore.getDate() - 7);
 
         const dateTwoWeeksBefore = new Date();
-        dateTwoWeeksBefore.setDate(dateTwoWeeksBefore.getDate() - 14);
+        dateTwoWeeksBefore.setUTCDate(dateTwoWeeksBefore.getDate() - 14);
 
         const dateOneWeekAfter = new Date();
-        dateOneWeekAfter.setDate(dateOneWeekAfter.getDate() + 7);
+        dateOneWeekAfter.setUTCDate(dateOneWeekAfter.getDate() + 7);
 
         const reservationsCreatedInTheLastWeek = allReservations.filter((reservation) => {
             return reservation.created_at >= dateOneWeekBefore
@@ -60,13 +60,13 @@ router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res)
         })
 
         const daysEnum = {
-            0: "MONDAY",
-            1: "TUESDAY",
-            2: "WEDNESDAY",
-            3: "THURSDAY",
-            4: "FRIDAY",
-            5: "SATURDAY",
-            6: "SUNDAY"
+            1: "MONDAY",
+            2: "TUESDAY",
+            3: "WEDNESDAY",
+            4: "THURSDAY",
+            5: "FRIDAY",
+            6: "SATURDAY",
+            0: "SUNDAY"
         }
 
         const days = {
@@ -86,14 +86,14 @@ router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res)
             const endingDate = reservation.reserved_to > currentDate ? currentDate : reservation.reserved_to
             let flag = true
             while (flag) {
-                const hour = startingDate.getHours()
-                const day = startingDate.getDay()
+                const hour = startingDate.getUTCHours()
+                const day = startingDate.getUTCDay()
 
                 days[daysEnum[day]][hour] += 1
 
-                startingDate.setHours(hour + 1)
+                startingDate.setUTCHours(hour + 1)
 
-                if (startingDate.getHours() > endingDate.getHours()) flag = false;
+                if (startingDate.getUTCHours() > endingDate.getUTCHours() && startingDate.getUTCDate() === endingDate.getUTCDate()) flag = false;
             }
         })
 
@@ -403,8 +403,6 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 success_url: 'http://localhost:3000/',
                 cancel_url: 'http://localhost:3000/'
               })
-
-            console.log(session.url)
     
             const updated = await prisma.reservation.update({
                 where: {
@@ -414,6 +412,10 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     payment_intent: session.payment_intent
                 }
             })
+
+            console.log(`Created new payment intent: ${session.payment_intent}`)
+
+            console.log(`With session URL: ${session.url}`)
 
             return updated
         })
