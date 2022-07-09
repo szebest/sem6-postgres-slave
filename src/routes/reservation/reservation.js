@@ -12,7 +12,7 @@ const { reservationValidator, reservationUpdateValidator } = require('../../midd
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
+router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
@@ -29,14 +29,10 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
             }
         })
 
-        const dateOneWeekBefore = new Date();
-        dateOneWeekBefore.setUTCDate(dateOneWeekBefore.getDate() - 7);
+        const currentDate = new Date()
 
-        const dateTwoWeeksBefore = new Date();
-        dateTwoWeeksBefore.setUTCDate(dateTwoWeeksBefore.getDate() - 14);
-
-        const dateOneWeekAfter = new Date();
-        dateOneWeekAfter.setUTCDate(dateOneWeekAfter.getDate() + 7);
+        const dateOneWeekBefore = new Date()
+        dateOneWeekBefore.setUTCDate(dateOneWeekBefore.getDate() - 7)
 
         const reservationsCreatedInTheLastWeek = allReservations.filter((reservation) => {
             return reservation.created_at >= dateOneWeekBefore
@@ -55,8 +51,10 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
         })
 
         const reservationsActiveInTheLastWeek = allReservations.filter((reservation) => {
-            return reservation.payment_status !== 'created' && 
-                reservation.reserved_from >= dateTwoWeeksBefore && reservation.reserved_to <= dateOneWeekAfter
+            return reservation.payment_status !== 'created' && checkOverlaps(reservationToDatesArray([reservation]), {
+                start: dateOneWeekBefore,
+                end: currentDate
+            }).length > 0
         })
 
         const daysEnum = {
@@ -79,12 +77,11 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
             SUNDAY: Array(24).fill(0)
         }
 
-        const currentDate = new Date()
-
         reservationsActiveInTheLastWeek.forEach((reservation) => {
             const startingDate = reservation.reserved_from < dateOneWeekBefore ? dateOneWeekBefore : reservation.reserved_from
             const endingDate = reservation.reserved_to > currentDate ? currentDate : reservation.reserved_to
             let flag = true
+            let amount = 1
             while (flag) {
                 const hour = startingDate.getUTCHours()
                 const day = startingDate.getUTCDay()
@@ -93,7 +90,10 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
 
                 startingDate.setUTCHours(hour + 1)
 
-                if (startingDate.getUTCHours() > endingDate.getUTCHours() && startingDate.getUTCDate() === endingDate.getUTCDate()) flag = false;
+                if ((startingDate.getUTCHours() > endingDate.getUTCHours() && 
+                    startingDate.getUTCDate() === endingDate.getUTCDate()) || amount >= 7 * 24) flag = false;
+
+                amount++
             }
         })
 
