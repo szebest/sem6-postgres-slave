@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
                     }
                 })
 
-                const updated = prisma.reservation.update({
+                const updated = await prisma.reservation.update({
                     where: {
                         id: parseInt(event.data.object.metadata?.reservation_id)
                     },
