@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
                     }
                 })
 
-                prisma.reservation.update({
+                const updated = prisma.reservation.update({
                     where: {
                         id: parseInt(event.data.object.metadata?.reservation_id)
                     },
@@ -40,6 +40,8 @@ router.post('/', async (req, res) => {
                         net_received: transactionData.data.net / 100
                     }
                 })
+
+                console.log(updated)
             }
         }
         else if (event.type === 'payment_intent.canceled') {
