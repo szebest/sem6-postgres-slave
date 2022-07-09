@@ -394,6 +394,12 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     metadata: {
                         type: "RESERVATION_PAYMENT",
                         reservation_id: created.id
+                    },
+                    transfer_data: {
+                        destination: process.env.STRIPE_ACCOUNT_ID,
+                        amount: reservationPriceCalculator(reservationDurationInHours, {
+                            amountPerHour: response.data.price_per_hour
+                        }) * 90 // 90% to the parking owner
                     }
                 },
                 expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
@@ -415,6 +421,19 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 success_url: 'http://localhost:3000/',
                 cancel_url: 'http://localhost:3000/'
             })
+
+            // const intent = await stripePayment({
+            //     amount: reservationPriceCalculator(reservationDurationInHours, {
+            //         amountPerHour: response.data.price_per_hour
+            //     }) * 100,
+            //     currency: 'pln',
+            //     payment_method_types: ['card'],
+            //     metadata: {
+            //         type: "RESERVATION_PAYMENT",
+            //         reservation_id: created.id
+            //     },
+            //     description: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
+            // }, `{ORDER${created.id}}`)
 
             const updated = await prisma.reservation.update({
                 where: {
@@ -490,6 +509,10 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 metadata: {
                     type: "EXCESS_PAYMENT",
                     reservation_id: reservation.id
+                },
+                transfer_data: {
+                    destination: process.env.STRIPE_ACCOUNT_ID,
+                    amount: reservation.excess_payment * 90 // 90% to the parking owner
                 }
             },
             expires_at: Math.round((new Date().getTime()) / 1000) + 3600,

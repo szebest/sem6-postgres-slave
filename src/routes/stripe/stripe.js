@@ -27,6 +27,8 @@ router.post('/', async (req, res) => {
                         authorization: `Bearer ${process.env.STRIPE_SECRET}`
                     }
                 })
+
+            console.log(transactionData.data)
             if (event.data.object.metadata?.type === "RESERVATION_PAYMENT") {
                 console.log("RESERVATION_PAYMENT")
                 
@@ -66,12 +68,14 @@ router.post('/', async (req, res) => {
             }
         }
         else if (event.type === 'payment_intent.canceled') {
-            const reservation_id = parseInt(event.data.object.metadata?.reservation_id)
-            await prisma.reservation.delete({
-                where: {
-                    id: isNaN(reservation_id) ? undefined : reservation_id
-                }
-            })
+            if (event.data.object.metadata?.type === "RESERVATION_PAYMENT") {
+                const reservation_id = parseInt(event.data.object.metadata?.reservation_id)
+                await prisma.reservation.delete({
+                    where: {
+                        id: isNaN(reservation_id) ? undefined : reservation_id
+                    }
+                })
+            }
         }
 
         return res.sendStatus(200)
