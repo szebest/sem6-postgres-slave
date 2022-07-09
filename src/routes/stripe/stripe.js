@@ -22,13 +22,6 @@ router.post('/', async (req, res) => {
         console.log('Metadata attached:')
         console.log(event.data.object.metadata)
         if (event.type === 'charge.succeeded') {
-            const transactionData = await axios.get(`https://api.stripe.com/v1/balance_transactions/${event.data.object.balance_transaction}`, {
-                    headers: {
-                        authorization: `Bearer ${process.env.STRIPE_SECRET}`
-                    }
-                })
-
-            console.log(event.data)
             if (event.data.object.metadata?.type === "RESERVATION_PAYMENT") {
                 console.log("RESERVATION_PAYMENT")
                 
@@ -39,8 +32,8 @@ router.post('/', async (req, res) => {
                     data: {
                         payment_status: 'paid',
                         receipt_URL: event.data.object.receipt_url,
-                        amount_paid: transactionData.data.amount / 100,
-                        net_received: transactionData.data.net / 100
+                        amount_paid: event.data.object.amount / 100,
+                        net_received: event.data.object.transfer_data.amount / 100
                     }
                 })
             }
@@ -53,16 +46,14 @@ router.post('/', async (req, res) => {
                     },
                     data: {
                         amount_paid: {
-                            increment: transactionData.data.amount / 100
+                            increment: event.data.object.amount / 100
                         },
                         net_received: {
-                            increment: transactionData.data.net / 100
+                            increment: event.data.object.transfer_data.amount / 100
                         },
                         excess_payment: 0
                     }
                 })
-
-                console.log(updated)
             }
         }
         else if (event.type === 'payment_intent.canceled') {

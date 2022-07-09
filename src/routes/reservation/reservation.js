@@ -387,6 +387,16 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             })
 
+            const priceInPLN = Math.round(reservationPriceCalculator(reservationDurationInHours, {
+                amountPerHour: response.data.price_per_hour
+            }) * 100)
+
+            const minimalFee = priceInPLN - Math.round((1 + priceInPLN * 0.0005) * 100)
+
+            const percentageFee = priceInPLN - Math.round(priceInPLN / 10)
+
+            const actualFee = minimalFee > percentageFee ? percentageFee : minimalFee
+
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
                 customer_email: customer.data.email,
@@ -397,9 +407,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     },
                     transfer_data: {
                         destination: process.env.STRIPE_ACCOUNT_ID,
-                        amount: reservationPriceCalculator(reservationDurationInHours, {
-                            amountPerHour: response.data.price_per_hour
-                        }) * 90 // 90% to the parking owner
+                        amount: actualFee
                     }
                 },
                 expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
@@ -410,9 +418,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                             product_data: {
                                 name: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
                             },
-                            unit_amount: reservationPriceCalculator(reservationDurationInHours, {
-                                amountPerHour: response.data.price_per_hour
-                            }) * 100 // Multiply by 100 because stripe uses the lower part of the currency as base
+                            unit_amount: priceInPLN
                         },
                         quantity: 1
                     }
@@ -502,6 +508,14 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 }
             })
 
+        const priceInPLN = Math.round(reservation.excess_payment * 100)
+
+        const minimalFee = priceInPLN - Math.round((1 + priceInPLN * 0.0005) * 100)
+
+        const percentageFee = priceInPLN - Math.round(priceInPLN / 10)
+
+        const actualFee = minimalFee > percentageFee ? percentageFee : minimalFee
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             customer_email: customer.data.email,
@@ -512,7 +526,7 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 },
                 transfer_data: {
                     destination: process.env.STRIPE_ACCOUNT_ID,
-                    amount: reservation.excess_payment * 90 // 90% to the parking owner
+                    amount: actualFee
                 }
             },
             expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
@@ -523,7 +537,7 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                         product_data: {
                             name: 'Dopłata za pozostanie dłużej na parkingu'
                         },
-                        unit_amount: reservation.excess_payment * 100
+                        unit_amount: priceInPLN
                     },
                     quantity: 1
                 }
