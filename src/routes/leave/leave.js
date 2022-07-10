@@ -8,6 +8,10 @@ const { ioObject } = require('../../socket')
 const { isLoggedInValidator } = require('../../middlewares/authorization');
 const { overtimePriceCalculator } = require('../../util');
 
+const { getDistance } = require('geolib');
+
+const axios = require('axios')
+
 router.post('/', isLoggedInValidator, async (req, res) => {
     // #swagger.summary = 'Used for leaving the parking. User has to be logged in or send a plate in the body. To open the gate remotely from the phone provide an access token, for microcontroller provide an access token and the plate in the body. After successfully finding an reservation the server will emit an open event to all the sockets connected.'
 
@@ -25,12 +29,54 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                     "plate": {
                         "example": "string",
                         "type": "string",
+                    },
+                    "latitude": {
+                        "example": "5.0",
+                        "type": "float",
+                        "description": "The latitude of the user"
+                    },
+                    "longitude": {
+                        "example": "10.0",
+                        "type": "float",
+                        "description": "The longitude of the user"
                     }
                 }
             }
     } */
     const id = req.userId
     const plates = req.userId ? req.body.plate : undefined
+    const latitude = req.body.latitude
+    const longitude = req.body.longitude
+
+    if (req.userId && latitude && longitude) {
+        const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl + '/api/v1'
+        const response = await axios
+        .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
+            params: {
+              server: process.env.NODE_ENV === 'development' ?
+                'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
+                fullUrl
+            }
+          })
+
+        const parkingLatitude = response.data.latitude
+        const parkingLongitude = response.data.longitude
+
+        const metersAway = getDistance({
+            latitude: parkingLatitude,
+            longitude: parkingLongitude
+        }, {
+            latitude: latitude,
+            longitude: longitude
+        })
+
+        if (metersAway > 300) {
+            return res.json({
+                status: 'TOO_FAR_FROM_PARKING',
+                foundReservation: null
+            }).status(403)
+        }
+    }
 
     if (!id && !plates) {
         return res.sendStatus(400)
@@ -43,6 +89,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                 plate: {
                     in: plates
                 },
+                is_inside: plates === undefined ? true : undefined,
                 payment_status: {
                     not: "created"
                 }
@@ -75,7 +122,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         else {
             return res.json({
                 status: 'FORBIDDEN',
-                foundReservation: reservation
+                foundReservation: null
             }).status(403)
         }
     }
