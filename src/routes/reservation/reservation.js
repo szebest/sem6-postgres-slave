@@ -336,7 +336,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             return overlap.overlap.end - overlap.overlap.start > 0
         })) {
             return res.send({
-                info: "USER_RESERVATION_OVERLAPS",
+                info: "PLATE_RESERVATION_OVERLAPS",
                 overlaps: {
                     ...overlapsSamePlateReservation[0].overlap
                 }
