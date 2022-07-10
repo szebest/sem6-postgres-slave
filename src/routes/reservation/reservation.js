@@ -391,11 +391,10 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 amountPerHour: response.data.price_per_hour
             }) * 100)
 
-            const minimalFee = priceInPLN - Math.round((1 + priceInPLN * 0.0005) * 100)
-
-            const percentageFee = priceInPLN - Math.round(priceInPLN / 10)
-
-            const actualFee = minimalFee > percentageFee ? percentageFee : minimalFee
+            const stripeFee = Math.round((1 + priceInPLN * 0.00029) * 100)
+            const ourFee = Math.round(priceInPLN / 20)
+            const feeCombined = stripeFee + ourFee
+            const userPayment = priceInPLN - feeCombined
 
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
@@ -407,7 +406,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     },
                     transfer_data: {
                         destination: process.env.STRIPE_ACCOUNT_ID,
-                        amount: actualFee
+                        amount: userPayment
                     }
                 },
                 expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
@@ -508,13 +507,10 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 }
             })
 
-        const priceInPLN = Math.round(reservation.excess_payment * 100)
-
-        const minimalFee = priceInPLN - Math.round((1 + priceInPLN * 0.0005) * 100)
-
-        const percentageFee = priceInPLN - Math.round(priceInPLN / 10)
-
-        const actualFee = minimalFee > percentageFee ? percentageFee : minimalFee
+        const stripeFee = Math.round((1 + priceInPLN * 0.00029) * 100)
+        const ourFee = Math.round(priceInPLN / 20)
+        const feeCombined = stripeFee + ourFee
+        const userPayment = priceInPLN - feeCombined
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -526,7 +522,7 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 },
                 transfer_data: {
                     destination: process.env.STRIPE_ACCOUNT_ID,
-                    amount: actualFee
+                    amount: userPayment
                 }
             },
             expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
