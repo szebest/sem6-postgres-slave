@@ -1,4 +1,3 @@
-const axios = require('axios')
 const express = require('express');
 router = express.Router();
 
@@ -74,7 +73,7 @@ router.post('/', async (req, res) => {
     }
 })
 
-router.get('/clientSecret/:payment_intent', /*isLoggedInValidator, hasUserValues,*/ async (req, res) => {
+router.get('/clientSecret/:payment_intent', isLoggedInValidator, hasUserValues, async (req, res) => {
     // #swagger.summary = 'Used for retrieving the client secret of the client payment by providing a payment_intent'
 
     /*  #swagger.parameters['authorization'] = {
