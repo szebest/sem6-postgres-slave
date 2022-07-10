@@ -26,9 +26,10 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             "@schema": {
                 "type": "object",
                 "properties": {
-                    "plate": {
-                        "example": "string",
-                        "type": "string",
+                    "plates": {
+                        "example": "[[a]]",
+                        "type": "array",
+                        "description": "2d array of strings"
                     },
                     "latitude": {
                         "example": "5.0",
@@ -44,7 +45,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             }
     } */
     const id = req.userId
-    const plates = req.userId ? req.body.plate : undefined
+    const plates = req.body.plates
     const latitude = req.body.latitude
     const longitude = req.body.longitude
 
@@ -78,53 +79,54 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         }
     }
 
-    if (!id && !plates) {
+    if (!id || !plates) {
         return res.sendStatus(400)
     }
 
     try {
-        const reservation = await prisma.reservation.findFirst({
-            where: {
-                user_id: id,
-                plate: {
-                    in: plates
-                },
-                is_inside: plates === undefined ? true : undefined,
-                payment_status: {
-                    not: "created"
-                }
-            }
-        })
-
-        if (reservation !== null) {
-            ioObject.io.emit('open')
-
-            const currentDate = new Date()
-
-            const diffInDates = currentDate - reservation.reserved_to
-
-            const updated = await prisma.reservation.update({
+        for (let i = 0; i < plates.length; i++) {
+            const reservation = await prisma.reservation.findFirst({
                 where: {
-                    id: reservation.id
-                },
-                data: {
-                    is_inside: false,
-                    last_left: currentDate,
-                    excess_payment: diffInDates > 0 ? await overtimePriceCalculator(diffInDates / (1000 * 60 * 60)) : undefined
+                    user_id: id,
+                    plate: {
+                        in: plates[i]
+                    },
+                    is_inside: req.userId === undefined ? undefined : true,
+                    payment_status: {
+                        not: "created"
+                    }
                 }
             })
+    
+            if (reservation !== null) {
+                ioObject.io.emit('open')
+    
+                const currentDate = new Date()
+    
+                const diffInDates = currentDate - reservation.reserved_to
+    
+                const updated = await prisma.reservation.update({
+                    where: {
+                        id: reservation.id
+                    },
+                    data: {
+                        is_inside: false,
+                        last_left: currentDate,
+                        excess_payment: diffInDates > 0 ? await overtimePriceCalculator(diffInDates / (1000 * 60 * 60)) : undefined
+                    }
+                })
+    
+                return res.json({
+                    status: 'OPEN',
+                    foundReservation: updated
+                }).status(200)
+            }
+        }
 
-            return res.json({
-                status: 'OPEN',
-                foundReservation: updated
-            }).status(200)
-        }
-        else {
-            return res.json({
-                status: 'FORBIDDEN',
-                foundReservation: null
-            }).status(403)
-        }
+        return res.json({
+            status: 'FORBIDDEN',
+            foundReservation: null
+        }).status(403)
     }
     catch(err) {
         console.log(err)

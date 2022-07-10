@@ -25,9 +25,10 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             "@schema": {
                 "type": "object",
                 "properties": {
-                    "plate": {
-                        "example": "string",
-                        "type": "string",
+                    "plates": {
+                        "example": "[[a]]",
+                        "type": "object",
+                        "description": "2d array of strings"
                     },
                     "latitude": {
                         "example": "5.0",
@@ -43,7 +44,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             }
     } */
     const id = req.userId
-    const plates = req.userId ? req.body.plate : undefined
+    const plates = req.body.plates
     const latitude = req.body.latitude
     const longitude = req.body.longitude
 
@@ -77,7 +78,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         }
     }
 
-    if (!id && !plates) {
+    if (!id || !plates) {
         return res.sendStatus(400)
     }
 
@@ -89,50 +90,51 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const isoDateFormat = currentDate.toISOString()
 
     try {
-        const reservation = await prisma.reservation.findFirst({
-            where: {
-                AND: {
-                    user_id: id,
-                    plate: {
-                        in: plates
-                    },
-                    reserved_from: {
-                        lte: isoDateFormat
-                    },
-                    reserved_to: {
-                        gte: isoDateFormat
-                    },
-                    is_inside: plates === undefined ? false : undefined,
-                    payment_status: {
-                        not: "created"
+        for (let i = 0; i < plates.length; i++) {
+            const reservation = await prisma.reservation.findFirst({
+                where: {
+                    AND: {
+                        user_id: id,
+                        plate: {
+                            in: plates[i]
+                        },
+                        reserved_from: {
+                            lte: isoDateFormat
+                        },
+                        reserved_to: {
+                            gte: isoDateFormat
+                        },
+                        is_inside: req.userId === undefined ? undefined : false,
+                        payment_status: {
+                            not: "created"
+                        }
                     }
                 }
-            }
-        })
-
-        if (reservation !== null) {
-            ioObject.io.emit('open')
-
-            const updated = await prisma.reservation.update({
-                where: {
-                    id: reservation.id
-                },
-                data: {
-                    is_inside: true
-                }
             })
+    
+            if (reservation !== null) {
+                ioObject.io.emit('open')
+    
+                const updated = await prisma.reservation.update({
+                    where: {
+                        id: reservation.id
+                    },
+                    data: {
+                        is_inside: true
+                    }
+                })
+    
+                return res.json({
+                    status: 'OPEN',
+                    foundReservation: updated
+                }).status(200)
+            }
+        }
 
-            return res.json({
-                status: 'OPEN',
-                foundReservation: updated
-            }).status(200)
-        }
-        else {
-            return res.json({
-                status: 'FORBIDDEN',
-                foundReservation: null
-            }).status(403)
-        }
+        return res.json({
+            status: 'FORBIDDEN',
+            foundReservation: null
+        }).status(403)
     }
     catch(err) {
         console.log(err)

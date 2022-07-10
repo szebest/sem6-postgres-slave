@@ -319,9 +319,10 @@
             "schema": {
               "type": "object",
               "properties": {
-                "plate": {
-                  "example": "string",
-                  "type": "string"
+                "plates": {
+                  "example": "[[a]]",
+                  "type": "object",
+                  "description": "2d array of strings"
                 },
                 "latitude": {
                   "example": "5.0",
@@ -373,9 +374,10 @@
             "schema": {
               "type": "object",
               "properties": {
-                "plate": {
-                  "example": "string",
-                  "type": "string"
+                "plates": {
+                  "example": "[[a]]",
+                  "type": "array",
+                  "description": "2d array of strings"
                 },
                 "latitude": {
                   "example": "5.0",
