@@ -322,6 +322,16 @@
                 "plate": {
                   "example": "string",
                   "type": "string"
+                },
+                "latitude": {
+                  "example": "5.0",
+                  "type": "float",
+                  "description": "The latitude of the user"
+                },
+                "longitude": {
+                  "example": "10.0",
+                  "type": "float",
+                  "description": "The longitude of the user"
                 }
               }
             }
@@ -366,6 +376,16 @@
                 "plate": {
                   "example": "string",
                   "type": "string"
+                },
+                "latitude": {
+                  "example": "5.0",
+                  "type": "float",
+                  "description": "The latitude of the user"
+                },
+                "longitude": {
+                  "example": "10.0",
+                  "type": "float",
+                  "description": "The longitude of the user"
                 }
               }
             }
