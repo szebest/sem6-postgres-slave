@@ -56,7 +56,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                     reserved_to: {
                         gte: isoDateFormat
                     },
-                    is_inside: false,
+                    is_inside: plates === undefined ? undefined : false,
                     payment_status: {
                         not: "created"
                     }
@@ -77,13 +77,13 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             })
 
             return res.json({
-                status: 'Open',
+                status: 'OPEN',
                 foundReservation: updated
             }).status(200)
         }
         else {
             return res.json({
-                status: 'Forbidden',
+                status: 'FORBIDDEN',
                 foundReservation: []
             }).status(403)
         }

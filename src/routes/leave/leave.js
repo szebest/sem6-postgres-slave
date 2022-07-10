@@ -42,6 +42,9 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                 user_id: id,
                 plate: {
                     in: plates
+                },
+                payment_status: {
+                    not: "created"
                 }
             }
         })
@@ -65,13 +68,13 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             })
 
             return res.json({
-                status: 'Open',
+                status: 'OPEN',
                 foundReservation: updated
             }).status(200)
         }
         else {
             return res.json({
-                status: 'Forbidden',
+                status: 'FORBIDDEN',
                 foundReservation: reservation
             }).status(403)
         }
