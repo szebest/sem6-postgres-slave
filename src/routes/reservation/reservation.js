@@ -112,7 +112,7 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
     }
 })
 
-router.get('/user', isSpecificUserValidator, hasUserValues, async (req, res) => {
+router.get('/user', isLoggedInValidator, hasUserValues, async (req, res) => {
     // #swagger.summary = 'Returns all the reservations made by a specific user. Has to be at least the specific user'
 
     /*  #swagger.parameters['authorization'] = {
