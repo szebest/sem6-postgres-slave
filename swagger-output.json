@@ -96,18 +96,11 @@
         }
       }
     },
-    "/api/v1/reservations/user/{id}": {
+    "/api/v1/reservations/user": {
       "get": {
         "summary": "Returns all the reservations made by a specific user. Has to be at least the specific user",
         "description": "",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "Id of the user"
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -118,9 +111,6 @@
         "responses": {
           "200": {
             "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
           },
           "401": {
             "description": "Unauthorized"

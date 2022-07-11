@@ -112,27 +112,17 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
     }
 })
 
-router.get('/user/:id', isSpecificUserValidator, hasUserValues, async (req, res) => {
+router.get('/user', isSpecificUserValidator, hasUserValues, async (req, res) => {
     // #swagger.summary = 'Returns all the reservations made by a specific user. Has to be at least the specific user'
 
     /*  #swagger.parameters['authorization'] = {
                 in: 'header',
                 description: 'Access token',
     } */
-
-    /*  #swagger.parameters['id'] = {
-                in: 'path',
-                description: 'Id of the user',
-                "type": "integer"
-    } */
-    const user_id = parseInt(req.params.id)
-    if (isNaN(user_id)) {
-        return res.sendStatus(400)
-    }
     try {
         const allUserReservations = await prisma.reservation.findMany({
             where: {
-                user_id
+                id: req.userId
             },
             orderBy: {
                 created_at: {
@@ -336,11 +326,11 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             return overlap.overlap.end - overlap.overlap.start > 0
         })) {
             return res.send({
-                info: "PLATE_RESERVATION_OVERLAPS",
+                error: "PLATE_RESERVATION_OVERLAPS",
                 overlaps: {
                     ...overlapsSamePlateReservation[0].overlap
                 }
-            }).status(406)
+            }).status(400)
         }
 
         const response = await axios
@@ -363,11 +353,11 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
 
         if (overlapObject != null) {
             return res.send({
-                info: "NOT_ENOUGH_FREE_PARKING_PLACES_LEFT",
+                error: "NOT_ENOUGH_FREE_PARKING_PLACES_LEFT",
                 overlaps: {
                     ...overlapObject.overlap
                 }
-            }).status(406)
+            }).status(400)
         }
 
         const customer = await axios
