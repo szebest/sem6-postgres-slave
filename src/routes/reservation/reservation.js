@@ -122,12 +122,10 @@ router.get('/user', isLoggedInValidator, hasUserValues, async (req, res) => {
     try {
         const allUserReservations = await prisma.reservation.findMany({
             where: {
-                id: req.userId
+                user_id: req.userId
             },
             orderBy: {
-                created_at: {
-                    sort: 'desc'
-                }
+                created_at: 'asc'
             }
         })
 
