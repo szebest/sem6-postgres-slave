@@ -22,7 +22,7 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
     try {
         const allReservations = (await prisma.reservation.findMany({
             orderBy: {
-                id: 'asc'
+                id: 'desc'
             }
         })).map((reservation) => {
             return {
@@ -131,7 +131,7 @@ router.get('/user', isLoggedInValidator, hasUserValues, async (req, res) => {
                 user_id: req.userId
             },
             orderBy: {
-                id: 'asc'
+                id: 'desc'
             }
         })
 
@@ -315,7 +315,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             },
             orderBy: {
-                id: 'asc'
+                id: 'desc'
             }
         })
 
