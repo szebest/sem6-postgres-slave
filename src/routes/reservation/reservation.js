@@ -119,6 +119,8 @@ router.get('/user', isLoggedInValidator, hasUserValues, async (req, res) => {
                 in: 'header',
                 description: 'Access token',
     } */
+
+    
     try {
         const allUserReservations = await prisma.reservation.findMany({
             where: {
