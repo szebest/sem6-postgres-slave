@@ -12,7 +12,7 @@ const { reservationValidator, reservationUpdateValidator } = require('../../midd
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
+router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
@@ -20,7 +20,11 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
                 description: 'Access token',
     } */
     try {
-        const allReservations = (await prisma.reservation.findMany()).map((reservation) => {
+        const allReservations = (await prisma.reservation.findMany({
+            orderBy: {
+                id: 'asc'
+            }
+        })).map((reservation) => {
             return {
                 ...reservation,
                 net_received: +reservation.net_received,
@@ -78,8 +82,8 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
         }
 
         reservationsActiveInTheLastWeek.forEach((reservation) => {
-            const startingDate = reservation.reserved_from < dateOneWeekBefore ? dateOneWeekBefore : reservation.reserved_from
-            const endingDate = reservation.reserved_to > currentDate ? currentDate : reservation.reserved_to
+            const startingDate = reservation.reserved_from < dateOneWeekBefore ? new Date(dateOneWeekBefore) : new Date(reservation.reserved_from)
+            const endingDate = reservation.reserved_to > currentDate ? new Date(currentDate) : new Date(reservation.reserved_to)
             let flag = true
             let amount = 1
             while (flag) {
@@ -120,14 +124,14 @@ router.get('/user', isLoggedInValidator, hasUserValues, async (req, res) => {
                 description: 'Access token',
     } */
 
-    
+
     try {
         const allUserReservations = await prisma.reservation.findMany({
             where: {
                 user_id: req.userId
             },
             orderBy: {
-                created_at: 'asc'
+                id: 'asc'
             }
         })
 
@@ -311,7 +315,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             },
             orderBy: {
-                created_at: 'desc'
+                id: 'asc'
             }
         })
 
