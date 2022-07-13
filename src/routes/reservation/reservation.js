@@ -7,12 +7,12 @@ const axios = require('axios')
 
 const stripe = require('../../stripe')
 
-const { isAtLeastServerAdminValidator, isLoggedInValidator, isSpecificUserValidator, hasUserValues } = require('../../middlewares/authorization');
+const { isAtLeastServerAdminValidator, isLoggedInValidator, hasUserValues } = require('../../middlewares/authorization');
 const { reservationValidator, reservationUpdateValidator } = require('../../middlewares/validators');
 const { checkOverlaps, reservationPriceCalculator } = require('../../util/');
 const { reservationToDatesArray } = require('../../mappers');
 
-router.get('/', /*isAtLeastServerAdminValidator, hasUserValues,*/ async (_, res) => {
+router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => {
     // #swagger.summary = 'Returns all the reservations made on the server. User has to be at least an owner'
 
     /*  #swagger.parameters['authorization'] = {
