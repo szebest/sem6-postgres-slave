@@ -46,13 +46,13 @@ router.get('/', isAtLeastServerAdminValidator, hasUserValues, async (_, res) => 
             return reservation.amount_paid
         }).reduce((previousValue, currentValue) => {
             return +previousValue + +currentValue ?? 0
-        })
+        }, 0)
 
         const netValueReceivedLastWeek = reservationsCreatedInTheLastWeek.map((reservation) => {
             return reservation.net_received
         }).reduce((previousValue, currentValue) => {
             return +previousValue + +currentValue ?? 0
-        })
+        }, 0)
 
         const reservationsActiveInTheLastWeek = allReservations.filter((reservation) => {
             return reservation.payment_status !== 'created' && checkOverlaps(reservationToDatesArray([reservation]), {
