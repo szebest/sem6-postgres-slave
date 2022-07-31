@@ -79,7 +79,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         }
     }
 
-    if (!id || !plates) {
+    if (!plates) {
         return res.sendStatus(400)
     }
 
