@@ -49,7 +49,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const latitude = req.body.latitude
     const longitude = req.body.longitude
 
-    const fullUrl = 'https://' + req.get('host') + req.originalUrl + '/api/v1'
+    const fullUrl = req.protocol + '://' + req.get('host') + '/api/v1'
     const response = await axios
         .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
             params: {
