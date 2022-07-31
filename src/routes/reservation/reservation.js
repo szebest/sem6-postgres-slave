@@ -371,6 +371,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             })
 
+        console.log(fullUrl)
         console.log(customer.data)
 
         // If the user who tries to reserve a parking slot is the owner of the parking
