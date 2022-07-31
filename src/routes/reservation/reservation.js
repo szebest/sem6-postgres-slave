@@ -296,7 +296,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             }
     } */
     try {
-        const fullUrl = 'https://' + req.get('host') + req.originalUrl + '/api/v1'
+        const fullUrl = 'https://' + req.get('host') + '/api/v1'
 
         const reserved_from = new Date(req.body.reserved_from)
         const reserved_to = new Date(req.body.reserved_to)
