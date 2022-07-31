@@ -100,7 +100,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     
             if (reservation !== null) {
                 const customer = await axios
-                    .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getCustomerInfoBySlave/${id}`, {
+                    .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getCustomerInfoBySlave/${reservation.user_id}`, {
                         headers: {
                             authorization: `Bearer ${process.env.SLAVE_SECRET}`
                         }
