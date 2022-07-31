@@ -298,9 +298,6 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
     try {
         const fullUrl = req.protocol + '://' + req.get('host') + '/api/v1'
 
-        console.log(req.protocol)
-        console.log(process.env.NODE_ENV)
-
         const reserved_from = new Date(req.body.reserved_from)
         const reserved_to = new Date(req.body.reserved_to)
         const reservationDurationInHours = Math.round(((reserved_to - reserved_from) / (1000 * 60 * 60)) * 100) / 100
@@ -373,10 +370,6 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                     authorization: `Bearer ${process.env.SLAVE_SECRET}`
                 }
             })
-
-        console.log(fullUrl)
-        console.log(customer.data.servers)
-        console.log(customer.data.servers.some((server) => server.server_URL === fullUrl))
 
         // If the user who tries to reserve a parking slot is the owner of the parking
         if (customer.data.servers.some((server) => server.server_URL === fullUrl)) {
