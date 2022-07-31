@@ -54,7 +54,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
         .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
             params: {
               server: process.env.NODE_ENV === 'development' ?
-                'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
+                'https://sem6-postgres-slave1.herokuapp.com/api/v1' :
                 fullUrl
             }
           })

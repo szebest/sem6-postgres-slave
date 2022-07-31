@@ -341,7 +341,7 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
                 params: {
                   server: process.env.NODE_ENV === 'development' ?
-                    'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
+                    'https://sem6-postgres-slave1.herokuapp.com/api/v1' :
                     fullUrl
                 }
               })
@@ -365,11 +365,30 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
         }
 
         const customer = await axios
-            .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getEmailBySlave/${req.userId}`, {
+            .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getCustomerInfoBySlave/${req.userId}`, {
                 headers: {
                     authorization: `Bearer ${process.env.SLAVE_SECRET}`
                 }
             })
+
+        console.log(customer.data)
+
+        // If the user who tries to reserve a parking slot is the owner of the parking
+        if (customer.data.servers.some((server) => server.server_URL === fullUrl)) {
+            const created = await prisma.reservation.create({
+                data: {
+                    reserved_from: reserved_from,
+                    reserved_to: reserved_to,
+                    user_id: req.userId,
+                    plate: req.body.plate,
+                    amount_paid: 0,
+                    net_received: 0,
+                    payment_status: 'paid'
+                }
+            })
+
+            return res.json(created).status(200)
+        }
 
         const created = await prisma.$transaction(async (prisma) => {
             const created = await prisma.reservation.create({
@@ -420,19 +439,6 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 success_url: 'http://localhost:3000/',
                 cancel_url: 'http://localhost:3000/'
             })
-
-            // const intent = await stripePayment({
-            //     amount: reservationPriceCalculator(reservationDurationInHours, {
-            //         amountPerHour: response.data.price_per_hour
-            //     }) * 100,
-            //     currency: 'pln',
-            //     payment_method_types: ['card'],
-            //     metadata: {
-            //         type: "RESERVATION_PAYMENT",
-            //         reservation_id: created.id
-            //     },
-            //     description: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
-            // }, `{ORDER${created.id}}`)
 
             const updated = await prisma.reservation.update({
                 where: {
@@ -495,7 +501,7 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
         }
 
         const customer = await axios
-            .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getEmailBySlave/${req.userId}`, {
+            .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getCustomerInfoBySlave/${req.userId}`, {
                 headers: {
                     authorization: `Bearer ${process.env.SLAVE_SECRET}`
                 }

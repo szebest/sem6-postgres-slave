@@ -49,17 +49,17 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const latitude = req.body.latitude
     const longitude = req.body.longitude
 
-    if (req.userId && latitude && longitude) {
-        const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl + '/api/v1'
-        const response = await axios
+    const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl + '/api/v1'
+    const response = await axios
         .get('https://sem6-postgres-master.herokuapp.com/api/v1/slaves/parkingInformation', {
             params: {
-              server: process.env.NODE_ENV === 'development' ?
-                'http://sem6-postgres-slave1.herokuapp.com/api/v1' :
-                fullUrl
+                server: process.env.NODE_ENV === 'development' ?
+                    'https://sem6-postgres-slave1.herokuapp.com/api/v1' :
+                    fullUrl
             }
-          })
+        })
 
+    if (req.userId && latitude && longitude) {
         const parkingLatitude = response.data.latitude
         const parkingLongitude = response.data.longitude
 
@@ -99,6 +99,15 @@ router.post('/', isLoggedInValidator, async (req, res) => {
             })
     
             if (reservation !== null) {
+                const customer = await axios
+                    .get(`https://sem6-postgres-master.herokuapp.com/api/v1/users/getCustomerInfoBySlave/${id}`, {
+                        headers: {
+                            authorization: `Bearer ${process.env.SLAVE_SECRET}`
+                        }
+                    })
+
+                const isThisParkingOwner = customer.data.servers.some((server) => server.server_URL === fullUrl)
+
                 ioObject.io.emit('open')
     
                 const currentDate = new Date()
@@ -112,7 +121,11 @@ router.post('/', isLoggedInValidator, async (req, res) => {
                     data: {
                         is_inside: false,
                         last_left: currentDate,
-                        excess_payment: diffInDates > 0 ? await overtimePriceCalculator(diffInDates / (1000 * 60 * 60)) : undefined
+                        excess_payment: (!isThisParkingOwner && diffInDates > 0) ? 
+                            overtimePriceCalculator(diffInDates / (1000 * 60 * 60), {
+                                amountPerHour: response.data.price_per_overtime_hour
+                            }) : 
+                            undefined
                     }
                 })
     
