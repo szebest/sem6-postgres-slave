@@ -371,6 +371,10 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
                 }
             })
 
+        console.log(fullUrl)
+        console.log(customer.data.servers)
+        console.log(customer.data.servers.some((server) => server.server_URL === fullUrl))
+
         // If the user who tries to reserve a parking slot is the owner of the parking
         if (customer.data.servers.some((server) => server.server_URL === fullUrl)) {
             const created = await prisma.reservation.create({
