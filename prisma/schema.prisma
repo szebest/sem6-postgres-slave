@@ -12,11 +12,6 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model owner {
-  id              Int       @id @default(autoincrement())
-  owner_id        Int
-}
-
 model reservation {
   id              Int       @id @default(autoincrement())
   created_at      DateTime  @default(now())
