@@ -489,6 +489,8 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
                 }
             })
 
+        const priceInPLN = reservation.excess_payment;
+
         const stripeFee = Math.round((1 + priceInPLN * 0.00029) * 100)
         const ourFee = Math.round(priceInPLN / 20)
         const feeCombined = stripeFee + ourFee
