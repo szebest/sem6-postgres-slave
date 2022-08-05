@@ -13,6 +13,7 @@ const { connect } = require('./socket')
 const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('../swagger-output.json')
 const prisma = require('./prismaClient')
+const stripe = require('./stripe')
 
 if (process.env.NODE_ENV === 'development') {
   swaggerFile.host = "localhost:" + PORT
@@ -45,17 +46,36 @@ const server = app.listen(PORT, () => {
 setInterval(async () => {
   const date = new Date()
   // ~15 minutes for the transaction to complete by the user
-  date.setMinutes(date.getMinutes() + 15)
-  const res = await prisma.reservation.deleteMany({
+  date.setMinutes(date.getMinutes() - 1)
+  console.log(`Cleaning up transactions created after: ${date.toISOString()}, which were not finished`)
+  const res = await prisma.reservation.findMany({
     where: {
       created_at: {
-        lte: date
+        lte: date.toISOString()
       },
       payment_status: 'created'
     }
   })
 
-  console.log(`Removed ${res.count} unfinished transactions`)
-}, 1000 * 60)
+  if (res.length > 0) {
+    res.forEach((reservation) => {
+      const intent = reservation.payment_intent
+      stripe.paymentIntents.cancel(intent);
+
+      console.log(`Invalidated ${intent} intent`)
+    })
+
+
+    await prisma.reservation.deleteMany({
+      where: {
+        id: {
+          in: res.map((reservation) => reservation.id)
+        }
+      }
+    })
+  }
+
+  console.log(`Removed ${res.length} unfinished transactions`)
+}, 1000 * 5)
 
 connect(server)
