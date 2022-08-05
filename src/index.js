@@ -12,6 +12,7 @@ const { connect } = require('./socket')
 
 const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('../swagger-output.json')
+const prisma = require('./prismaClient')
 
 if (process.env.NODE_ENV === 'development') {
   swaggerFile.host = "localhost:" + PORT
@@ -40,5 +41,21 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 const server = app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`)
 })
+
+setInterval(async () => {
+  const date = new Date()
+  // ~15 minutes for the transaction to complete by the user
+  date.setMinutes(date.getMinutes() + 15)
+  const res = await prisma.reservation.deleteMany({
+    where: {
+      created_at: {
+        lte: date
+      },
+      payment_status: 'created'
+    }
+  })
+
+  console.log(`Removed ${res.count} unfinished transactions`)
+}, 1000 * 60)
 
 connect(server)
