@@ -407,40 +407,10 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
             const feeCombined = stripeFee + ourFee
             const userPayment = priceInPLN - feeCombined
 
-            // const session = await stripe.checkout.sessions.create({
-            //     payment_method_types: ['card'],
-            //     customer_email: customer.data.email,
-            //     payment_intent_data: {
-            //         metadata: {
-            //             type: "RESERVATION_PAYMENT",
-            //             reservation_id: created.id
-            //         },
-            //         transfer_data: {
-            //             destination: process.env.STRIPE_ACCOUNT_ID,
-            //             amount: userPayment
-            //         }
-            //     },
-            //     expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
-            //     line_items: [
-            //         {
-            //             price_data: {
-            //                 currency: 'pln',
-            //                 product_data: {
-            //                     name: `Rezerwacja parkingu na ${reservationDurationInHours} godzin`
-            //                 },
-            //                 unit_amount: priceInPLN
-            //             },
-            //             quantity: 1
-            //         }
-            //     ],
-            //     mode: 'payment',
-            //     success_url: 'http://localhost:3000/',
-            //     cancel_url: 'http://localhost:3000/'
-            // })
-
             const intent = await stripe.paymentIntents.create({
                 amount: priceInPLN,
                 currency: 'pln',
+                receipt_email: customer.data.email,
                 payment_method_types: ['card'],
                 transfer_data: {
                     amount: userPayment,
@@ -524,45 +494,27 @@ router.post('/:id', reservationValidator, isLoggedInValidator, hasUserValues, as
         const feeCombined = stripeFee + ourFee
         const userPayment = priceInPLN - feeCombined
 
-        const session = await stripe.checkout.sessions.create({
+        const intent = await stripe.paymentIntents.create({
+            amount: priceInPLN,
+            currency: 'pln',
+            receipt_email: customer.data.email,
             payment_method_types: ['card'],
-            customer_email: customer.data.email,
-            payment_intent_data: {
-                metadata: {
-                    type: "EXCESS_PAYMENT",
-                    reservation_id: reservation.id
-                },
-                transfer_data: {
-                    destination: process.env.STRIPE_ACCOUNT_ID,
-                    amount: userPayment
-                }
+            transfer_data: {
+                amount: userPayment,
+                destination: process.env.STRIPE_ACCOUNT_ID,
             },
-            expires_at: Math.round((new Date().getTime()) / 1000) + 3600,
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'pln',
-                        product_data: {
-                            name: 'Dopłata za pozostanie dłużej na parkingu'
-                        },
-                        unit_amount: priceInPLN
-                    },
-                    quantity: 1
-                }
-            ],
-            mode: 'payment',
-            success_url: 'http://localhost:3000/',
-            cancel_url: 'http://localhost:3000/'
+            metadata: {
+                type: "EXCESS_PAYMENT",
+                reservation_id: reservation.id
+            }
         })
 
         console.log("EXCESS_PAYMENT")
 
-        console.log(`Created new payment intent: ${session.payment_intent}`)
-
-        console.log(`With session URL: ${session.url}`)
+        console.log(`Created new payment intent: ${intent.id}`)
 
         return res.json({
-            payment_intent: session.payment_intent
+            payment_intent: intent.id
         }).status(200)
     }
     catch(err) {
