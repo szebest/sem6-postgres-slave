@@ -46,7 +46,7 @@ const server = app.listen(PORT, () => {
 setInterval(async () => {
   const date = new Date()
   // ~15 minutes for the transaction to complete by the user
-  date.setMinutes(date.getMinutes() - 1)
+  date.setMinutes(date.getMinutes() - 15)
   console.log(`Cleaning up transactions created after: ${date.toISOString()}, which were not finished`)
   const res = await prisma.reservation.findMany({
     where: {
@@ -76,6 +76,6 @@ setInterval(async () => {
   }
 
   console.log(`Removed ${res.length} unfinished transactions`)
-}, 1000 * 5)
+}, 1000 * 60)
 
 connect(server)
