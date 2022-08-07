@@ -375,8 +375,8 @@ router.post('/', reservationValidator, isLoggedInValidator, hasUserValues, async
         if (customer.data.servers.some((server) => server.server_URL === fullUrl)) {
             const created = await prisma.reservation.create({
                 data: {
-                    reserved_from: reserved_from,
-                    reserved_to: reserved_to,
+                    reserved_from: reserved_from.toISOString(),
+                    reserved_to: reserved_to.toISOString(),
                     user_id: req.userId,
                     plate: req.body.plate,
                     amount_paid: 0,
