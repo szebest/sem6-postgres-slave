@@ -85,7 +85,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
     const currentDate = new Date()
     
     // Allow the user to enter 5 minutes earlier
-    currentDate.setMinutes(currentDate.getMinutes() - 5)
+    currentDate.setMinutes(currentDate.getMinutes() + 5)
 
     const isoDateFormat = currentDate.toISOString()
 
