@@ -108,7 +108,7 @@ router.post('/', isLoggedInValidator, async (req, res) => {
 
                 const isThisParkingOwner = customer.data.servers.some((server) => server.server_URL === fullUrl)
 
-                ioObject.io.emit('open')
+                ioObject.io.emit('leave')
     
                 const currentDate = new Date()
     
