@@ -21,12 +21,12 @@ This repo contains code for the main backend. This backend handles authenticatio
 #### How to get the stripe env variables and set up the parking information on the master server
 1. Create the main stripe account - this will be used do connect accounts used by the clients
 2. Localize the stripe publishable key and the stripe secret key
-3. Go to the URL [link]([https://dashboard.stripe.com/webhooks]) and generate a stripe webhook
-4. Go to the URL [link (test mode)]([https://dashboard.stripe.com/test/connect/accounts/overview]) to create a new connected account used by the parking owner
+3. Go to the URL [link](https://dashboard.stripe.com/webhooks) and generate a stripe webhook
+4. Go to the URL [link (test mode)](https://dashboard.stripe.com/test/connect/accounts/overview) to create a new connected account used by the parking owner
 5. Send the link to the owner to fill the details
 6. Obtain the stripe account id of the created parking owner stripe account
 7. Fill the env variables
-8. Add a record with the parking information using the [Cieciex CMS]([https://cieciex.netlify.app/]), logged in as the admin of the system
+8. Add a record with the parking information using the [Cieciex CMS](https://cieciex.netlify.app/), logged in as the admin of the system
 
 #### How does the payment process work
 <div style="display: flex;justify-content: center"><img style="width: 500px" src="https://b.stripecdn.com/docs-statics-srv/assets/application_fee_amount.837aa2339469b3c1a4319672971c1367.svg" alt="Funds flow"/>
@@ -50,9 +50,9 @@ So the system owner gets 5% of every transaction made on the connected parkings.
 ### Deployment
 1. There is a Procfile that is configured to host this project on heroku
 
-Deployed on Heroku - [link1]([(https://sem6-postgres-slave1.herokuapp.com/)]) [link2]([(https://sem6-postgres-slave2.herokuapp.com/)])
+Deployed on Heroku - [link1](https://sem6-postgres-slave1.herokuapp.com/) [link2](https://sem6-postgres-slave2.herokuapp.com/)
 
-Endpoint documentation [link]([https://sem6-postgres-slave1.herokuapp.com/docs/])
+Endpoint documentation [link](https://sem6-postgres-slave1.herokuapp.com/docs/)
 
 The routes in this project start with an prefix `/api/v1/`
 
